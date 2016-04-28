@@ -63,6 +63,7 @@
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
     </Compile>
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -76,6 +77,48 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\barHorizontal_green_right.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\barHorizontal_yellow_left.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\barHorizontal_yellow_mid.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\barHorizontal_yellow_right.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\barHorizontal_shadow_left.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\barHorizontal_shadow_mid.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\barHorizontal_shadow_right.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\barHorizontal_green_left.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\barHorizontal_green_mid.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\metalPanel_blue.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\grey_circle.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\square_shadow.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\squareWhite.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\glassPanel_cornerTL.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
