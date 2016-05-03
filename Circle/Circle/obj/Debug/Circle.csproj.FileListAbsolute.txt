@@ -1,0 +1,9 @@
+c:\users\oleg\documents\visual studio 2013\Projects\Circle\Circle\bin\Debug\Circle.exe
+C:\Users\Oleg\documents\visual studio 2013\Projects\Circle\Circle\bin\Debug\Circle.exe.config
+C:\Users\Oleg\documents\visual studio 2013\Projects\Circle\Circle\bin\Debug\Circle.pdb
+C:\Users\Oleg\documents\visual studio 2013\Projects\Circle\Circle\obj\Debug\Circle.Form1.resources
+C:\Users\Oleg\documents\visual studio 2013\Projects\Circle\Circle\obj\Debug\Circle.Properties.Resources.resources
+C:\Users\Oleg\documents\visual studio 2013\Projects\Circle\Circle\obj\Debug\Circle.csproj.GenerateResource.Cache
+C:\Users\Oleg\documents\visual studio 2013\Projects\Circle\Circle\obj\Debug\Circle.exe
+C:\Users\Oleg\documents\visual studio 2013\Projects\Circle\Circle\obj\Debug\Circle.pdb
+C:\Users\Oleg\documents\visual studio 2013\Projects\Circle\Circle\obj\Debug\Circle.csprojResolveAssemblyReference.cache
