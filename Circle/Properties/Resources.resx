@@ -136,6 +136,15 @@
   <data name="barGreenRight" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\barHorizontal_green_right.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
+  <data name="barRedLeft" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\barHorizontal_red_left.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="barRedMid" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\barHorizontal_red_mid.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="barRedRight" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\barHorizontal_red_right.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
   <data name="barYellowLeft" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\barHorizontal_yellow_left.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
@@ -154,10 +163,40 @@
   <data name="circleGray" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\grey_circle.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
+  <data name="flash" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\flash.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="glassPanelConsole" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\glassPanelConsole.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="glassPanelCorners" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\glassPanel_corners.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="glassPanelSimple" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\glassPanel.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="glassPanel_projection" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\glassPanel_projection.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="grayBoxChecked" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\grayBoxChecked.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="grayBoxEmpty" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\grayBoxEmpty.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="metalPanel_blueCorner" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\metalPanel_blueCorner.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
   <data name="panelBlue" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\metalPanel_blue.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="panelGlassTL" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\glassPanel_cornerTL.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="steel_box" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\steel_box.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="wooden_box" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\wooden_box.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
 </root>

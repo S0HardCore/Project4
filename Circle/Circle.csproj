@@ -120,6 +120,45 @@
   <ItemGroup>
     <None Include="Resources\glassPanel_cornerTL.png" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\wooden_box.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\steel_box.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\glassPanel_corners.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\glassPanel_projection.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\barHorizontal_red_left.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\barHorizontal_red_mid.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\barHorizontal_red_right.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\metalPanel_blueCorner.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\glassPanelConsole.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\glassPanel.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\grayBoxEmpty.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\grayBoxChecked.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\flash.png" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

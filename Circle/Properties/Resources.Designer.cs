@@ -123,6 +123,36 @@ namespace Circle.Properties {
         /// <summary>
         ///   Поиск локализованного ресурса типа System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap barRedLeft {
+            get {
+                object obj = ResourceManager.GetObject("barRedLeft", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Поиск локализованного ресурса типа System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap barRedMid {
+            get {
+                object obj = ResourceManager.GetObject("barRedMid", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Поиск локализованного ресурса типа System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap barRedRight {
+            get {
+                object obj = ResourceManager.GetObject("barRedRight", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Поиск локализованного ресурса типа System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap barYellowLeft {
             get {
                 object obj = ResourceManager.GetObject("barYellowLeft", resourceCulture);
@@ -183,6 +213,86 @@ namespace Circle.Properties {
         /// <summary>
         ///   Поиск локализованного ресурса типа System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap flash {
+            get {
+                object obj = ResourceManager.GetObject("flash", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Поиск локализованного ресурса типа System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap glassPanel_projection {
+            get {
+                object obj = ResourceManager.GetObject("glassPanel_projection", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Поиск локализованного ресурса типа System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap glassPanelConsole {
+            get {
+                object obj = ResourceManager.GetObject("glassPanelConsole", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Поиск локализованного ресурса типа System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap glassPanelCorners {
+            get {
+                object obj = ResourceManager.GetObject("glassPanelCorners", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Поиск локализованного ресурса типа System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap glassPanelSimple {
+            get {
+                object obj = ResourceManager.GetObject("glassPanelSimple", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Поиск локализованного ресурса типа System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap grayBoxChecked {
+            get {
+                object obj = ResourceManager.GetObject("grayBoxChecked", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Поиск локализованного ресурса типа System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap grayBoxEmpty {
+            get {
+                object obj = ResourceManager.GetObject("grayBoxEmpty", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Поиск локализованного ресурса типа System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap metalPanel_blueCorner {
+            get {
+                object obj = ResourceManager.GetObject("metalPanel_blueCorner", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Поиск локализованного ресурса типа System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap panelBlue {
             get {
                 object obj = ResourceManager.GetObject("panelBlue", resourceCulture);
@@ -196,6 +306,26 @@ namespace Circle.Properties {
         internal static System.Drawing.Bitmap panelGlassTL {
             get {
                 object obj = ResourceManager.GetObject("panelGlassTL", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Поиск локализованного ресурса типа System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap steel_box {
+            get {
+                object obj = ResourceManager.GetObject("steel_box", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Поиск локализованного ресурса типа System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap wooden_box {
+            get {
+                object obj = ResourceManager.GetObject("wooden_box", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
