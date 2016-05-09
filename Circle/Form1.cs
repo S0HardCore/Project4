@@ -83,7 +83,12 @@ namespace Circle
         {
             Wooden,
             Steel
-        }
+        };
+        enum DoorType
+        {
+            Blocking,
+            Transporting
+        };
         enum ObjectList
         {
             None,
@@ -95,14 +100,19 @@ namespace Circle
         {
             Default,
             Flash,
-            Ninja,
-        }
+            Ninja
+        };
         enum ProgramState
         {
             Paused,
             Active,
             Settings,
             Dialog
+        };
+        enum DialogType
+        {
+            GameEnd,
+            Information
         };
         static ProgramState GameState;
         static readonly StringFormat
@@ -349,16 +359,28 @@ namespace Circle
                 Points[1] = new PointF(Position.X + Cos(Direction + 30) * 15, Position.Y + Sin(Direction + 30) * 16);
                 return Points;
             }
-            public void DoDamage(Ball _Ball)
+            public Rectangle ActualRectangle()
             {
-                _Ball.Detected = false;
-                _Ball.Duration = 0f;
-                _Ball.Color = Color.AliceBlue;
+                return new Rectangle((int)Position.X - 14, (int)Position.Y - 14, 26, 26);
+            }
+            public RectangleF ActualRectangleF()
+            {
+                return new RectangleF(Position.X - 14, Position.Y - 14, 26, 26);
+            }
+            public void DoDamage()
+            {
                 Health--;
                 if (Health > 0)
                     Position = new PointF(HERO_INITIAL_POSITION.X + 25, HERO_INITIAL_POSITION.Y + 25);
                 else
                     GameState = ProgramState.Dialog;
+            }
+            public void DoDamage(Ball _Ball)
+            {
+                _Ball.Detected = false;
+                _Ball.Duration = 0f;
+                _Ball.Color = Color.AliceBlue;
+                this.DoDamage();
             }
         }
 
@@ -368,19 +390,60 @@ namespace Circle
             public Point Start;
             public Point End;
             public Point Direction;
-            public Door(Rectangle _Rectangle, Point _Start, Point _End, Point _Direction)
+            public DoorType Type;
+            public Door(Rectangle _Rectangle, Point _Start, Point _End, Point _Direction, DoorType _Type)
             {
                 Rectangle = _Rectangle;
                 Start = _Start;
                 End = _End;
                 Direction = _Direction;
+                Type = _Type;
             }
-            public Door(int x, int y, int w, int h, Point _Start, Point _End, Point _Direction)
+            public Door(int x, int y, int w, int h, Point _Start, Point _End, Point _Direction, DoorType _Type)
             {
                 Rectangle = new Rectangle(x, y, w, h);
                 Start = _Start;
                 End = _End;
                 Direction = _Direction;
+                Type = _Type;
+            }
+        }
+
+        class Laser
+        {
+            public Point RayStart;
+            public Point MoveStart;
+            public Boolean Moveable = false;
+            public Point MoveEnd;
+            public Point MoveDirection;
+            public Point RayEnd;
+            public Point Direction;
+            public Laser(Point _Start, Point _Direction)
+            {
+                RayStart = _Start;
+                Direction = _Direction;
+                Refresh();
+            }
+            public Laser(Point _Start, Point _End, Point _Direction, Point _MoveDirection)
+            {
+                RayStart = MoveStart = _Start;
+                MoveEnd = _End;
+                Moveable = true;
+                Direction = _Direction;
+                MoveDirection = _MoveDirection;
+                Refresh();
+            }
+            public void Refresh()
+            {
+                Point next = RayStart;
+                Mark:
+                next.Offset(Direction);
+                if (theHero.ActualRectangle().Contains(next))
+                    theHero.DoDamage();
+                foreach (Box TB in Boxes)
+                    if (reg.IsVisible(next) && !TB.Rectangle().Contains(next))
+                        goto Mark;
+                RayEnd = next;
             }
         }
 
@@ -415,6 +478,10 @@ namespace Circle
                 Health--;
                 if (Health < 1)
                     Exist = false;
+            }
+            public void Unstuck()
+            {
+                Position = getRandomPointInRegion(reg);
             }
         }
 
@@ -492,7 +559,7 @@ namespace Circle
                     if (!reg.IsVisible(Points[a]))
                         PointsCounter++;
                 if (PointsCounter > 3)
-                    if (Size.Width > 2f)
+                    if (Size.Width > 3f)
                     {
                         Size.Width -= 0.5f;
                         Size.Height -= 0.5f;
@@ -589,8 +656,10 @@ namespace Circle
         static Boolean
             showDI = false, PressedForward = false, PressedLeft = false, PressedRight = false,
             AnyBallSelected, SpeedChangerSelected, CountChangerSelected, BGSpeedChangerSelected, AimingEnabled = true, MagnetUsing = false;
+        DialogType CurrentDialog;
         static List<Ball> Balls = new List<Ball>();
         static List<Door> Doors = new List<Door>();
+        static List<Laser> Lasers = new List<Laser>();
         static List<Box> Boxes = new List<Box>();
         static List<Projectile> Projectiles = new List<Projectile>();
         static Hero theHero;
@@ -639,11 +708,14 @@ namespace Circle
                 HeroLastPoints[a] = HERO_INITIAL_POSITION.Location;
             theHero = new Hero(HERO_INITIAL_POSITION.X + 25, HERO_INITIAL_POSITION.Y + 25, 0f);
             CirclePath.AddEllipse(CircleRectangle);
+            RegionRefresh();
             Boxes.Add(new Box(new PointF(300, 600), BoxType.Wooden));
             Boxes.Add(new Box(new PointF(350, 750), BoxType.Steel));
-            Doors.Add(new Door(new Rectangle(new Point(500, 200), new Size(10, 50)), new Point(500, 200), new Point(500, 400), new Point(0, 1)));
-            Doors.Add(new Door(new Rectangle(new Point(300, 500), new Size(50, 10)), new Point(200, 500), new Point(400, 500), new Point(1, 0)));
-            RegionRefresh();
+            Doors.Add(new Door(new Rectangle(new Point(500, 200), new Size(10, 50)), new Point(500, 200), new Point(500, 400), new Point(0, 1), DoorType.Blocking));
+            Doors.Add(new Door(new Rectangle(new Point(300, 500), new Size(50, 10)), new Point(200, 500), new Point(400, 500), new Point(1, 0), DoorType.Blocking));
+            Doors.Add(new Door(new Rectangle(new Point(450, 875), new Size(50, 25)), new Point(450, 875), new Point(700, 875), new Point(1, 0), DoorType.Transporting));
+            Lasers.Add(new Laser(new Point(340, 300), new Point(0, 1)));
+            Lasers.Add(new Laser(new Point(900, 450), new Point(900, 650), new Point(-1, 0), new Point(0, 1)));
             for (int a = 0; a < BallCount; ++a)
                 Balls.Add(new Ball(getRandomPointInRegion(reg), (float)(getRandom.Next(8, 18) / 10f), (float)getRandom.NextDouble() + getRandom.Next(359)));
         }
@@ -660,7 +732,7 @@ namespace Circle
             AimingCheckBoxRectangle.X = SettingRectangle.X + 90;
             AimingCheckBoxRectangle.Y = SettingRectangle.Y + 35;
             TryAgainRectangle.X = Resolution.Width / 2 - 160;
-            TryAgainRectangle.Y = Resolution.Height / 2 - 120;
+            TryAgainRectangle.Y = Resolution.Height / 2 - 60;
             OkRectangle.X = Resolution.Width / 2 - 120;
             OkRectangle.Y = ExitRectangle.Y = TryAgainRectangle.Y + 70;
             ExitRectangle.X = OkRectangle.X + 160;
@@ -686,12 +758,15 @@ namespace Circle
             reg.Union(new Rectangle(1550, 350, 500, 50));
             reg.Exclude(new Rectangle(300, 650, 150, 5));
             reg.Exclude(new Rectangle(560, 350, 340, 4));
-            reg.Exclude(new Rectangle(900, 350, 2, 300));
+            reg.Exclude(new Rectangle(900, 350, 2, 299));
             foreach (Box TB in Boxes)
                 if (TB.Exist)
                     reg.Exclude(new RectangleF(TB.Position, new SizeF(32, 32)));
             foreach (Door TD in Doors)
-                reg.Xor(TD.Rectangle);
+                if (TD.Type == DoorType.Blocking)
+                    reg.Xor(TD.Rectangle);
+                else
+                    reg.Union(TD.Rectangle);
         }
 
         //PointF getRandomPointInRegion(GraphicsPath _path)
@@ -704,16 +779,14 @@ namespace Circle
         //    goto Mark;
         //}
 
-        PointF getRandomPointInRegion(Region _reg)
+       static PointF getRandomPointInRegion(Region _reg)
         {
             Point TP;
         Mark:
             TP = new Point(getRandom.Next(1920), getRandom.Next(1080));
             foreach (Door TD in Doors)
-            {
                 if (_reg.IsVisible(TP) && !TD.Rectangle.Contains(TP) && !HERO_INITIAL_POSITION.Contains(TP))
                     return TP;
-            }
             goto Mark;
         }
 
@@ -773,13 +846,20 @@ namespace Circle
                 switch (e.KeyData)
                 {
                     case Keys.F1:
-                        if (GameState == ProgramState.Active || GameState == ProgramState.Paused)
-                            GameState = ProgramState.Settings;
-                        else
-                            GameState = ProgramState.Active;
+                        if (GameState != ProgramState.Dialog)
+                            if (GameState == ProgramState.Active || GameState == ProgramState.Paused)
+                                GameState = ProgramState.Settings;
+                            else
+                                GameState = ProgramState.Active;
                         break;
                     case Keys.F2:
+                        theHero.Health = 0;
                         GameState = ProgramState.Dialog;
+                        break;
+                    case Keys.Enter:
+                        if (GameState == ProgramState.Dialog)
+                            if (CurrentDialog == DialogType.GameEnd)
+                                TryAgain();
                         break;
                     case Keys.Space:
                         MagnetUsing = true;
@@ -957,20 +1037,25 @@ namespace Circle
             {
                 if (OkRectangle.Contains(e.Location))
                 {
-                    theHero.Health = HERO_MAX_LIVES;
-                    theHero.Position = new PointF(HERO_INITIAL_POSITION.X + 25, HERO_INITIAL_POSITION.Y + 25);
-                    theHero.Direction = 0f;
-                    BallCount = 10;
-                    BallSpeed = 1f;
-                    foreach (Ball TB in Balls)
-                        TB.Position = getRandomPointInRegion(reg);
-                    GameState = ProgramState.Active;
+                    TryAgain();
                 }
                 else
                     if (ExitRectangle.Contains(e.Location))
                         Application.Exit();
             }
             pMouseMove(sender, e);
+        }
+
+        private void TryAgain()
+        {
+            theHero.Health = HERO_MAX_LIVES;
+            theHero.Position = new PointF(HERO_INITIAL_POSITION.X + 25, HERO_INITIAL_POSITION.Y + 25);
+            theHero.Direction = 0f;
+            BallCount = 10;
+            BallSpeed = 1f;
+            foreach (Ball TB in Balls)
+                TB.Position = getRandomPointInRegion(reg);
+            GameState = ProgramState.Active;
         }
 
         void pUpdate(object sender, EventArgs e)
@@ -1016,7 +1101,7 @@ namespace Circle
                     if (TD.Rectangle.Contains(MouseAiming))
                     {
                         AimingDuration = 0f;
-                        AimingInformation = "Object: Door\nSpeed: Normal\nDirection: " + (TD.Direction.X != 0 ? "Horizontal" : "Vertical");
+                        AimingInformation = "Object: " + (TD.Type == DoorType.Blocking ? "Door" : "Vehicle") + "\nSpeed: Normal\nDirection: " + (TD.Direction.X != 0 ? "Horizontal" : "Vertical");
                         float width = 9 * iGlassPanelSimple.Width / 10,
                               height = 3 * iGlassPanelSimple.Height / 4;
                         AimingPosition = new PointF(TD.Rectangle.X + ViewOffset.X - width / 2, TD.Rectangle.Y + ViewOffset.Y - height);
@@ -1098,13 +1183,13 @@ namespace Circle
                         if (TD.Direction.Y != 0)
                             if ((TD.Direction.Y > 0 && TD.Rectangle.Y < TD.End.Y) ||
                                  TD.Direction.Y < 0 && TD.Rectangle.Y > TD.Start.Y)
-                                TD.Rectangle.Y += TD.Direction.Y * (theHero.Suit == SuitList.Flash ? 1 : 2);
+                                TD.Rectangle.Y += TD.Direction.Y * (theHero.Suit == SuitList.Flash || TD.Type == DoorType.Transporting ? 1 : 2);
                             else
                                 TD.Direction.Y = -TD.Direction.Y;
                         if (TD.Direction.X != 0)
                             if ((TD.Direction.X > 0 && TD.Rectangle.X < TD.End.X) ||
                                  TD.Direction.X < 0 && TD.Rectangle.X > TD.Start.X)
-                                TD.Rectangle.X += TD.Direction.X * (theHero.Suit == SuitList.Flash ? 1 : 2);
+                                TD.Rectangle.X += TD.Direction.X * (theHero.Suit == SuitList.Flash || TD.Type == DoorType.Transporting ? 1 : 2);
                             else
                                 TD.Direction.X = -TD.Direction.X;
                         RegionRefresh();
@@ -1123,19 +1208,24 @@ namespace Circle
                             BallCount--;
                             break;
                         }
+
                         if (Balls[a].Detected)
                             if (Balls[a].Duration < DETECTION_TIME)
                                 Balls[a].Duration += 0.01f;
                             else
                                 theHero.DoDamage(Balls[a]);
+
                         float x = Balls[a].Position.X + (theHero.Position.X > Balls[a].Position.X ? 8 : 0),
                               y = Balls[a].Position.Y + (theHero.Position.Y > Balls[a].Position.Y ? 8 : 0),
                               dist = (float)Math.Sqrt(Math.Pow(theHero.Position.X - x, 2) + Math.Pow(theHero.Position.Y - y, 2));
+
                         if (!new Region(HERO_INITIAL_POSITION).IsVisible(theHero.Position) && theHero.Suit != SuitList.Ninja)
                             if (dist >= 25 && dist <= ENEMY_VIEW.Width / 4f)
                                 Balls[a].Direction = theHero.AngleBetween(theHero.Position, Balls[a].Position);
                             else if (dist >= ENEMY_VIEW.Width / 4f && dist <= ENEMY_VIEW.Width / 3f)
-                                Balls[a].Direction = theHero.AngleBetween(theHero.Position, new PointF((theHero.Position.X + Balls[a].Position.X) / 2f, (theHero.Position.Y + Balls[a].Position.Y) / 2f));
+                                Balls[a].Direction = theHero.AngleBetween(theHero.Position,
+                                    new PointF((theHero.Position.X + Balls[a].Position.X) / 2f, (theHero.Position.Y + Balls[a].Position.Y) / 2f));
+
                         if ((dist < 18 && !new Region(HERO_INITIAL_POSITION).IsVisible(theHero.Position)) ||
                         (Balls[a].RefreshView().IsVisible(theHero.Position) && !new Region(HERO_INITIAL_POSITION).IsVisible(theHero.Position)))
                         {
@@ -1163,10 +1253,38 @@ namespace Circle
                                   nextY = Balls[a].Position.Y + (float)Math.Sin(Math.PI * Balls[a].Direction / 180) * Balls[a].Speed * BallSpeed;
                             int ax = (nextX > Balls[a].Position.X ? 18 : 6), ay = (nextY > Balls[a].Position.Y ? 18 : 12);
                             PointF PP = new PointF(nextX + ax * (float)Math.Cos(Math.PI * Balls[a].Direction / 180), nextY + ay * (float)Math.Sin(Math.PI * Balls[a].Direction / 180));
-                            if (!reg.IsVisible(PP) || new Region(HERO_INITIAL_POSITION).IsVisible(PP))
+
+                            foreach (Door TD in Doors)
+                            if (!reg.IsVisible(PP) || new Region(HERO_INITIAL_POSITION).IsVisible(PP) || new Region(TD.Rectangle).IsVisible(nextX, nextY))
                                 Balls[a].Direction -= 150 + getRandom.Next(-30, 30);
+
                             Balls[a].Position = new PointF(nextX, nextY);
                         }
+                        foreach (Door TD in Doors)
+                            if (new Region(TD.Rectangle).IsVisible(Balls[a].Position))
+                                Balls[a].Unstuck();
+                    }
+                    #endregion
+
+                    #region Lasers
+                    foreach (Laser TL in Lasers)
+                    {
+                        if (TL.Moveable)
+                        {
+                            if (TL.MoveDirection.Y != 0)
+                                if ((TL.MoveDirection.Y > 0 && TL.RayStart.Y < TL.MoveEnd.Y) ||
+                                     TL.MoveDirection.Y < 0 && TL.RayStart.Y > TL.MoveStart.Y)
+                                    TL.RayStart.Y += TL.MoveDirection.Y;
+                                else
+                                    TL.MoveDirection.Y = -TL.MoveDirection.Y;
+                            if (TL.MoveDirection.X != 0)
+                                if ((TL.MoveDirection.X > 0 && TL.RayStart.X < TL.MoveEnd.X) ||
+                                     TL.MoveDirection.X < 0 && TL.RayStart.X > TL.MoveStart.X)
+                                    TL.RayStart.X += TL.MoveDirection.X;
+                                else
+                                    TL.MoveDirection.X = -TL.MoveDirection.X;
+                        }
+                        TL.Refresh();
                     }
                     #endregion
 
@@ -1237,9 +1355,16 @@ namespace Circle
                 g.DrawEllipse(new Pen(Balls[a].Color, 2), TP.X - 7, TP.Y - 7, 24, 24);
                 g.FillEllipse(new SolidBrush(Balls[a].Color), TP.X, TP.Y, 10, 10);
             }
-
-            //foreach (Door TD in Doors)
-            //    g.DrawRectangle(Pens.Black, TD.Rectangle);
+            foreach (Laser TL in Lasers)
+            {
+                g.DrawLine(new Pen(Color.FromArgb(24, 255, 255, 255), 3), TL.RayStart, TL.RayEnd);
+                g.DrawLine(Pens.Red, TL.RayStart, TL.RayEnd);
+            }
+            foreach (Door TD in Doors)
+                if (TD.Type == DoorType.Blocking)
+                    g.DrawRectangle(Pens.Black, TD.Rectangle);
+                else
+                    g.FillRectangle(new HatchBrush(HatchStyle.Percent30, Color.Black, Color.CornflowerBlue), TD.Rectangle);
 
             #region Boxes & Projectiles
             foreach (Box TB in Boxes)
@@ -1293,7 +1418,8 @@ namespace Circle
 
             //Rectangle viewRect = new Rectangle((int)theHero.Position.X - HERO_VIEW.Width / 2 + 1, (int)theHero.Position.Y - HERO_VIEW.Height / 2 + 1, HERO_VIEW.Width, HERO_VIEW.Height);
             //g.FillPie(viewBrush, viewRect, theHero.Direction - 45, 90);
-            
+
+
             g.ResetTransform();
             
             if (AimingEnabled)
@@ -1333,12 +1459,15 @@ namespace Circle
             switch (GameState)
             {
                 case ProgramState.Dialog:
-                    g.DrawImage(iGlassPanelCorners, TryAgainRectangle);
-                    g.DrawString("Do you want try again ?", Verdana17, Brushes.Black, TryAgainRectangle.X + 18, TryAgainRectangle.Y + 20);
-                    g.DrawString("Again", Verdana15, Brushes.Black, OkRectangle.X + 8, OkRectangle.Y + 1);
-                    g.DrawString("Exit", Verdana15, Brushes.Black, ExitRectangle.X + 17, ExitRectangle.Y + 1);
-                    g.DrawImage(iGlassPanelCorners, OkRectangle);
-                    g.DrawImage(iGlassPanelCorners, ExitRectangle);
+                    if (CurrentDialog == DialogType.GameEnd)
+                    {
+                        g.DrawImage(iGlassPanelCorners, TryAgainRectangle);
+                        g.DrawString("Do you want try again ?", Verdana17, Brushes.Black, TryAgainRectangle.X + 18, TryAgainRectangle.Y + 20);
+                        g.DrawString("Again", Verdana15, Brushes.Black, OkRectangle.X + 8, OkRectangle.Y + 1);
+                        g.DrawString("Exit", Verdana15, Brushes.Black, ExitRectangle.X + 17, ExitRectangle.Y + 1);
+                        g.DrawImage(iGlassPanelCorners, OkRectangle);
+                        g.DrawImage(iGlassPanelCorners, ExitRectangle);
+                    }
                     break;
                 case ProgramState.Settings:
                     g.DrawImage(iSettingBG, SettingRectangle);
