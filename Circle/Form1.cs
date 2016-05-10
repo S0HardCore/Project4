@@ -25,14 +25,19 @@ namespace Circle
             BG_INTERVAL_MIN = 5,
             BG_INTERVAL_MAX = 410,
             PROJECTILE_SIZE = 3,
-            PROJECTILE_SPEED = 8;
+            PROJECTILE_SPEED = 8,
+            TEMPORARY_REGION_MIN_SIZE = 4,
+            TEMPORARY_REGION_MAX_SIZE = 100;
         const float
             HERO_TURN_RATE = 4.8f,
-            DETECTION_TIME = 2.6f,
+            DETECTION_TIME = 1.8f,
             PROJECTILE_COOLDOWN = 0.2f,
             DEFAULT_HERO_VELOCITY = 1.5f,
             INCREASED_HERO_VELOCITY = 3.5f,
-            AIMING_DURATION = 0.8f;
+            AIMING_DURATION = 0.8f,
+            TEMPORARY_REGION_DURATION = 5f,
+            TEMPORARY_REGION_COOLDOWN = 1f,
+            FALLING_TIME_LIMIT = 0.6f;
         readonly static Size
             HERO_SIZE = new Size(HERO_WIDTH, HERO_HEIGHT),
             ENEMY_VIEW = new Size(125, 125),
@@ -41,6 +46,15 @@ namespace Circle
             HERO_INITIAL_POSITION = new Rectangle(150, 600, 50, 50);
         static Random
             getRandom = new Random(DateTime.Now.Millisecond);
+        readonly static Color[]
+            DETECTION_COLORS = new Color[5]
+            {
+                Color.FromArgb(245, 158, 162),
+                Color.FromArgb(255, 126, 130),
+                Color.FromArgb(255, 94, 98),
+                Color.FromArgb(255, 62, 64),
+                Color.FromArgb(255, 30, 32)
+            };
         Image[]
             iBars = new Image[]
             {
@@ -380,6 +394,7 @@ namespace Circle
                 _Ball.Detected = false;
                 _Ball.Duration = 0f;
                 _Ball.Color = Color.AliceBlue;
+                _Ball.Boost(false);
                 this.DoDamage();
             }
         }
@@ -451,6 +466,7 @@ namespace Circle
         {
             public PointF Position;
             public float Speed;
+            public float DefaultSpeed;
             public float Direction;
             public float Duration = 0f;
             public Boolean Detected = false;
@@ -461,7 +477,7 @@ namespace Circle
             public Ball(PointF _Position, float _Speed, float _Direction)
             {
                 Position = _Position;
-                Speed = _Speed;
+                DefaultSpeed = Speed = _Speed;
                 Direction = _Direction;
             }
             public Region RefreshView()
@@ -482,6 +498,13 @@ namespace Circle
             public void Unstuck()
             {
                 Position = getRandomPointInRegion(reg);
+            }
+            public void Boost(Boolean Up)
+            {
+                if (Up)
+                    Speed = DefaultSpeed + (Duration + 0.01f) / (theHero.Suit == SuitList.Flash ? 6f : 3f);
+                else
+                    Speed = DefaultSpeed;
             }
         }
 
@@ -568,6 +591,46 @@ namespace Circle
             }
         }
 
+        class TemporaryRegion
+        {
+            public Region Rectangle;
+            public Point InitialPosition;
+            public Point Position;
+            public float Duration = -2f;
+            public Boolean Exist = true;
+            public float Size = TEMPORARY_REGION_MIN_SIZE;
+            public TemporaryRegion(Point _Point)
+            {
+                GraphicsPath TGP = new GraphicsPath();
+                InitialPosition = Position = _Point;
+                TGP.AddEllipse(Position.X, Position.Y, TEMPORARY_REGION_MIN_SIZE, TEMPORARY_REGION_MIN_SIZE);
+                Rectangle = new Region(TGP);
+            }
+            public void Resize()
+            {
+                if (Duration < TEMPORARY_REGION_DURATION)
+                {
+                    Duration += 0.01f;
+                    if (Duration <= 2)
+                    {
+                        if (Size < TEMPORARY_REGION_MAX_SIZE)
+                            Size += 0.5f;
+                    }
+                    else
+                        if (Size > TEMPORARY_REGION_MIN_SIZE)
+                            Size -= 0.5f;
+                }
+                if (Duration >= TEMPORARY_REGION_DURATION || Size <= TEMPORARY_REGION_MIN_SIZE)
+                    Exist = false;
+                Rectangle.Dispose();
+                Position = InitialPosition;
+                Position.Offset((int)-Size / 2, (int)-Size / 2);
+                GraphicsPath TGP = new GraphicsPath();
+                TGP.AddEllipse(Position.X, Position.Y, Size, Size);
+                Rectangle = new Region(TGP);
+            }
+        }
+
         class BackGroundColor
         {
             public int R;
@@ -647,8 +710,8 @@ namespace Circle
         Point ViewOffset = new Point(785, -85);
         int lastTick, lastFrameRate, frameRate,
             UnstuckIndex = 0, SelectedBall = -1, BallCount = 10, BGInterval = 365;
-        static float BallSpeed = 1f, ProjectileCooldown = 0f, AimingDuration = 0f,
-            theHeroVelocity = 1.5f;
+        static float BallSpeed = 1f, theHeroVelocity = 1.5f, HeroFallingDuration = 0f,
+            ProjectileCooldown = 0f, AimingDuration = 0f, TemporaryRegionCoolDown = TEMPORARY_REGION_COOLDOWN;
         string AimingInformation = "";
         PointF AimingPosition = new Point(960, 540);
         RectangleF AimingRectangle;
@@ -662,11 +725,12 @@ namespace Circle
         static List<Laser> Lasers = new List<Laser>();
         static List<Box> Boxes = new List<Box>();
         static List<Projectile> Projectiles = new List<Projectile>();
+        static List<TemporaryRegion> TempRegs = new List<TemporaryRegion>();
         static Hero theHero;
         BackGroundColor BGColor;
         #endregion
 
-        private int CalculateFrameRate()
+        int CalculateFrameRate()
         {
             if (System.Environment.TickCount - lastTick >= 1000)
             {
@@ -698,7 +762,15 @@ namespace Circle
             secondaryTimer.Start();
         }
 
-        private void InitialSetup()
+        void SecondaryLoop(object sender, EventArgs e)
+        {
+            BGColor.Increase(true);
+            this.BackColor = BGColor.Set();
+            if (getRandom.Next(50) == 0)
+                BGColor.randomFactors();
+        }
+
+        void InitialSetup()
         {
             GameState = ProgramState.Active;
             TextFormatCenter.Alignment = StringAlignment.Center;
@@ -720,7 +792,7 @@ namespace Circle
                 Balls.Add(new Ball(getRandomPointInRegion(reg), (float)(getRandom.Next(8, 18) / 10f), (float)getRandom.NextDouble() + getRandom.Next(359)));
         }
 
-        private static void ResolutionResize()
+        static void ResolutionResize()
         {
             HealthRectangle.Y = Resolution.Height - 75;
             SettingRectangle.X = Resolution.Width / 2 - 100;
@@ -738,14 +810,6 @@ namespace Circle
             ExitRectangle.X = OkRectangle.X + 160;
         }
 
-        void SecondaryLoop(object sender, EventArgs e)
-        {
-            BGColor.Increase(true);
-            this.BackColor = BGColor.Set();
-            if (getRandom.Next(50) == 0)
-                BGColor.randomFactors();
-        }
-
         void RegionRefresh()
         {
             reg = new Region(new Rectangle(1200, 400, 400, 400));
@@ -759,6 +823,8 @@ namespace Circle
             reg.Exclude(new Rectangle(300, 650, 150, 5));
             reg.Exclude(new Rectangle(560, 350, 340, 4));
             reg.Exclude(new Rectangle(900, 350, 2, 299));
+            foreach (TemporaryRegion TTR in TempRegs)
+                reg.Union(TTR.Rectangle);
             foreach (Box TB in Boxes)
                 if (TB.Exist)
                     reg.Exclude(new RectangleF(TB.Position, new SizeF(32, 32)));
@@ -769,25 +835,16 @@ namespace Circle
                     reg.Union(TD.Rectangle);
         }
 
-        //PointF getRandomPointInRegion(GraphicsPath _path)
-        //{
-        //    PointF TP;
-        //Mark:
-        //    TP = new PointF(getRandom.Next(1920), getRandom.Next(1080));
-        //    if (_path.IsVisible(TP))
-        //        return TP;
-        //    goto Mark;
-        //}
-
-       static PointF getRandomPointInRegion(Region _reg)
+        void TryAgain()
         {
-            Point TP;
-        Mark:
-            TP = new Point(getRandom.Next(1920), getRandom.Next(1080));
-            foreach (Door TD in Doors)
-                if (_reg.IsVisible(TP) && !TD.Rectangle.Contains(TP) && !HERO_INITIAL_POSITION.Contains(TP))
-                    return TP;
-            goto Mark;
+            theHero.Health = HERO_MAX_LIVES;
+            theHero.Position = new PointF(HERO_INITIAL_POSITION.X + 25, HERO_INITIAL_POSITION.Y + 25);
+            theHero.Direction = 0f;
+            BallCount = 10;
+            BallSpeed = 1f;
+            foreach (Ball TB in Balls)
+                TB.Position = getRandomPointInRegion(reg);
+            GameState = ProgramState.Active;
         }
 
         void HandItemAction()
@@ -804,6 +861,17 @@ namespace Circle
                 case ObjectList.Key:
                     break;
             }
+        }
+
+        static PointF getRandomPointInRegion(Region _reg)
+        {
+            Point TP;
+        Mark:
+            TP = new Point(getRandom.Next(1920), getRandom.Next(1080));
+            foreach (Door TD in Doors)
+                if (_reg.IsVisible(TP) && !TD.Rectangle.Contains(TP) && !HERO_INITIAL_POSITION.Contains(TP))
+                    return TP;
+            goto Mark;
         }
 
         void pKeyDown(object sender, KeyEventArgs e)
@@ -895,6 +963,7 @@ namespace Circle
                 }
                 #endregion
         }
+
         void pKeyUp(object sender, KeyEventArgs e)
         {
             if (!Console.Enabled)
@@ -989,6 +1058,11 @@ namespace Circle
         void pMouseUp(object sender, MouseEventArgs e)
         {
             Point ClickOffset = new Point(e.X - ViewOffset.X, e.Y - ViewOffset.Y);
+            if (e.Button != MouseButtons.Right && TemporaryRegionCoolDown >= TEMPORARY_REGION_COOLDOWN && GameState == ProgramState.Active)
+            {
+                TempRegs.Add(new TemporaryRegion(ClickOffset));
+                TemporaryRegionCoolDown = 0f;
+            }
             AnyBallSelected = false;
             SpeedChangerSelected = false;
             CountChangerSelected = false;
@@ -1046,22 +1120,11 @@ namespace Circle
             pMouseMove(sender, e);
         }
 
-        private void TryAgain()
-        {
-            theHero.Health = HERO_MAX_LIVES;
-            theHero.Position = new PointF(HERO_INITIAL_POSITION.X + 25, HERO_INITIAL_POSITION.Y + 25);
-            theHero.Direction = 0f;
-            BallCount = 10;
-            BallSpeed = 1f;
-            foreach (Ball TB in Balls)
-                TB.Position = getRandomPointInRegion(reg);
-            GameState = ProgramState.Active;
-        }
-
         void pUpdate(object sender, EventArgs e)
         {
             ViewOffset.X = -((int)theHero.Position.X - Resolution.Width / 2);
             ViewOffset.Y = -((int)theHero.Position.Y - Resolution.Height / 2);
+
             if (AimingEnabled)
             #region Aiming Information
             {
@@ -1124,17 +1187,39 @@ namespace Circle
             switch (GameState)
             {
                 case ProgramState.Active:
+                    ProjectileCooldown += 0.01f;
+                    TemporaryRegionCoolDown += 0.01f;
+
+                    #region Falling
                     if (reg.IsVisible(theHero.Position))
+                    {
+                        HeroFallingDuration = 0f;
                         HeroLastPoints[UnstuckIndex] = theHero.Position;
+                    }
+
                     if (UnstuckIndex < HeroLastPoints.Length - 1)
                         UnstuckIndex++;
                     else
                         UnstuckIndex = 0;
+
                     if (!reg.IsVisible(theHero.Position))
+                    {
                         theHero.Position = HeroLastPoints[UnstuckIndex];
+                        HeroFallingDuration += 0.01f;
+                    }
 
-                    ProjectileCooldown += 0.01f;
+                    if (HeroFallingDuration > FALLING_TIME_LIMIT)
+                    {
+                        theHero.Health--;
+                        TryAgain();
+                    }
+                    #endregion    
 
+                    for (int r = 0; r < TempRegs.Count; ++r)
+                        if (TempRegs[r].Exist)
+                            TempRegs[r].Resize();
+                        else
+                            TempRegs.Remove(TempRegs[r]);
                     #region Moving
                     if (PressedLeft)
                         if (theHero.Direction < HERO_TURN_RATE)
@@ -1234,8 +1319,9 @@ namespace Circle
                                 if (theHero.Suit != SuitList.Ninja)
                                 {
                                     Balls[a].Detected = true;
-                                    Balls[a].Color = Color.FromArgb(245, 158, 162);
+                                    Balls[a].Color = DETECTION_COLORS[(int)(Balls[a].Duration / 0.5f)];
                                     Balls[a].Direction = theHero.AngleBetween(theHero.Position, Balls[a].Position);
+                                    Balls[a].Boost(true);
                                 }
                             }
                             else
@@ -1429,8 +1515,8 @@ namespace Circle
                     g.DrawString(AimingInformation, new Font("QUARTZ MS", 12), Brushes.Black, AimingPosition.X + (AimingRectangle.Width >= 9 * iGlassPanelSimple.Width / 10 ? 3 : 7), AimingPosition.Y + 4);
                 }
 
-            g.DrawString("Lives", Nirmala20, textLB, new Point(HealthRectangle.X + 16, HealthRectangle.Y + 10));
             g.DrawImage(iPanelGlass, HealthRectangle);
+            g.DrawString("Lives", Nirmala20, textLB, new Point(HealthRectangle.X + 16, HealthRectangle.Y + 10));
             for (int s = 0; s < HERO_MAX_LIVES; ++s)
                 g.DrawImage(s > theHero.Health - 1 ? iBlock[0] : iBlock[1], HealthRectangle.X + 93 + 27 * s, HealthRectangle.Y + 18);
 
@@ -1439,7 +1525,7 @@ namespace Circle
             {
                 string output = "Status: " + GameState.ToString() + "\nFPS: " + CalculateFrameRate().ToString();
                 output += "\nPosition: " + Math.Round(theHero.Position.X).ToString() + "; " + Math.Round(theHero.Position.Y).ToString();
-                output += "\nR " + BGColor.R + "; G " + BGColor.G + "; B " + BGColor.B + "\n" + MouseAiming.ToString() + "\n";
+                output += "\nR " + BGColor.R + "; G " + BGColor.G + "; B " + BGColor.B + "\n" + MouseAiming.ToString() + "\n" + Math.Round(HeroFallingDuration, 1).ToString();
                 g.DrawString(output, new Font("QUARTZ MS", 14), Brushes.Black, 0, Console.Enabled ? 50 : 0);
             }
             #endregion
