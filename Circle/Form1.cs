@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Drawing.Imaging;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
 
@@ -39,6 +38,7 @@ namespace Circle
             AIMING_DURATION = 0.8f,
             TEMPORARY_REGION_DURATION = 5f,
             TEMPORARY_REGION_COOLDOWN = 1f,
+            MESSAGE_DURATION = 4.0f,
             FALLING_TIME_LIMIT = 0.6f;
         readonly static Size
             HERO_SIZE = new Size(HERO_WIDTH, HERO_HEIGHT),
@@ -133,7 +133,7 @@ namespace Circle
         };
         static ProgramState GameState;
         static readonly StringFormat
-            TextFormatCenter = new StringFormat(StringFormatFlags.NoClip);
+            TextFormatCenter = new StringFormat();
         static Timer
             updateTimer = new Timer(),
             secondaryTimer = new Timer();
@@ -157,6 +157,8 @@ namespace Circle
             SettingRectangle = new Rectangle(860, 390, 200, 300),
             AimingCheckBoxRectangle = new Rectangle(950, 425, 32, 30),
             TryAgainRectangle = new Rectangle(800, 480, 320, 120),
+            MessageRectangle = new Rectangle(760, 440, 400, 200),
+            DoneRectangle = new Rectangle(920, 580, 80, 30),
             OkRectangle = new Rectangle(840, 550, 80, 30),
             ExitRectangle = new Rectangle(1000, 550, 80, 30);
         #endregion
@@ -273,19 +275,10 @@ namespace Circle
                     case "AUTO":
                     case "AUTORES":
                     case "AUTORESOLUTION":
+                    case "RESOLUTION":
                         Resolution = Screen.PrimaryScreen.Bounds.Size;
                         ResolutionResize();
                         consoleLog = "Automatically " + Resolution.Width + "x" + Resolution.Height + " done.";
-                        break;
-                    case "RESOLUTION":
-                    case "DEFAULTRESOLUTION":
-                    case "DEFRESOLUTION":
-                    case "DEFAULTRES":
-                    case "RES":
-                    case "DEFRES":
-                        Resolution = new Size(1920, 1080);
-                        ResolutionResize();
-                        consoleLog = "1920x1080 done.";
                         break;
                 }
                 consolePrevString = consoleString;
@@ -372,11 +365,11 @@ namespace Circle
             }
             public Rectangle ActualRectangle()
             {
-                return new Rectangle((int)Position.X - 14, (int)Position.Y - 14, 26, 26);
+                return new Rectangle((int)Position.X - 14, (int)Position.Y - 14, 25, 25);
             }
             public RectangleF ActualRectangleF()
             {
-                return new RectangleF(Position.X - 14, Position.Y - 14, 26, 26);
+                return new RectangleF(Position.X - 14, Position.Y - 14, 25.5f, 25.5f);
             }
             public void DoDamage()
             {
@@ -384,7 +377,10 @@ namespace Circle
                 if (Health > 0)
                     Position = new PointF(HERO_INITIAL_POSITION.X + 25, HERO_INITIAL_POSITION.Y + 25);
                 else
+                {
+                    CurrentDialog = DialogType.GameEnd;
                     GameState = ProgramState.Dialog;
+                }
             }
             public void DoDamage(Ball _Ball)
             {
@@ -697,6 +693,36 @@ namespace Circle
             }
         }
 
+        class Message
+        {
+            public string OldText;
+            public string NewText;
+            public Boolean Completed = false;
+            public float Duration = 0f;
+            public Message(string _Text)
+            {
+                OldText = _Text;
+            }
+            public void Change()
+            {
+                int index = (int)(OldText.Length * Duration / MESSAGE_DURATION * 2f);
+                char[] chars = OldText.ToCharArray();
+                for (int c = index; c < OldText.Length; ++c)
+                {
+                    if (OldText[c] == ' ' || OldText[c] == '.')
+                        chars[c] = OldText[c];
+                    else
+                        if (Char.IsLower(OldText, c))
+                            chars[c] = (char)getRandom.Next(97, 122);
+                        else
+                            chars[c] = (char)getRandom.Next(65, 91);
+                }
+                NewText = new string(chars);
+                if (NewText == OldText)
+                    Completed = true;
+            }
+        }
+
         #region Variables
         static Size
             Resolution = new Size(1920, 1080);
@@ -712,13 +738,14 @@ namespace Circle
         static float BallSpeed = 1f, theHeroVelocity = 1.5f, HeroFallingDuration = 0f, IntroDuration = 0f,
             ProjectileCooldown = 0f, AimingDuration = 0f, TemporaryRegionCoolDown = TEMPORARY_REGION_COOLDOWN;
         string AimingInformation = "";
+        static Message CurrentMessage;
         PointF AimingPosition = new Point(960, 540);
         RectangleF AimingRectangle;
         static Region reg;
         static Boolean
             showDI = false, PressedForward = false, PressedLeft = false, PressedRight = false, IntroOver = false,
             AnyBallSelected, SpeedChangerSelected, CountChangerSelected, BGSpeedChangerSelected, AimingEnabled = true, MagnetUsing = false;
-        DialogType CurrentDialog;
+        static DialogType CurrentDialog;
         static List<Ball> Balls = new List<Ball>();
         static List<Door> Doors = new List<Door>();
         static List<Laser> Lasers = new List<Laser>();
@@ -880,7 +907,7 @@ namespace Circle
 
         void pKeyDown(object sender, KeyEventArgs e)
         {
-            if (true)//GameState != ProgramState.Intro)
+            if (GameState != ProgramState.Intro)
             {
                 if (e.KeyData == Keys.Escape)
                     if (GameState != ProgramState.Settings && GameState != ProgramState.Dialog)
@@ -930,11 +957,17 @@ namespace Circle
                         case Keys.F2:
                             theHero.Health = 0;
                             GameState = ProgramState.Dialog;
+                            CurrentDialog = DialogType.GameEnd;
                             break;
                         case Keys.Enter:
                             if (GameState == ProgramState.Dialog)
                                 if (CurrentDialog == DialogType.GameEnd)
                                     TryAgain();
+                                else
+                                {
+                                    GameState = ProgramState.Active;
+                                    CurrentMessage.Duration = 0f;
+                                }
                             break;
                         case Keys.Space:
                             MagnetUsing = true;
@@ -1129,15 +1162,21 @@ namespace Circle
                         BGSpeedChangerSelected = true;
 
                 if (GameState == ProgramState.Dialog)
-                {
-                    if (OkRectangle.Contains(e.Location))
+                    if (CurrentDialog == DialogType.GameEnd)
                     {
-                        TryAgain();
+                        if (OkRectangle.Contains(e.Location))
+                            TryAgain();
+                        else
+                            if (ExitRectangle.Contains(e.Location))
+                                Application.Exit();
                     }
                     else
-                        if (ExitRectangle.Contains(e.Location))
-                            Application.Exit();
-                }
+                        if (DoneRectangle.Contains(e.Location))
+                        {
+                            GameState = ProgramState.Active;
+                            CurrentMessage.Duration = 0f;
+                        }
+                    
                 pMouseMove(sender, e);
             }
         }
@@ -1146,12 +1185,15 @@ namespace Circle
         {
             ViewOffset.X = -((int)theHero.Position.X - Resolution.Width / 2);
             ViewOffset.Y = -((int)theHero.Position.Y - Resolution.Height / 2);
-            IntroDuration += 0.01f;
             if (IntroDuration >= INTRO_DURATION && !IntroOver)
             {
-                GameState = ProgramState.Active;
+                GameState = ProgramState.Dialog;
+                CurrentMessage = new Message("You are lost.\nAvoid the lasers and enemies.\nKeep searching a way out.");
+                CurrentDialog = DialogType.Information;
                 IntroOver = true;
             }
+            else
+                IntroDuration += 0.01f;
 
             if (AimingEnabled && GameState != ProgramState.Intro)
             #region Aiming Information
@@ -1403,8 +1445,16 @@ namespace Circle
                     #endregion
 
                     break;
-                //case ProgramState.Settings:
-                //    break;
+                case ProgramState.Dialog:
+                    if (CurrentDialog == DialogType.Information)
+                        if (CurrentMessage.Duration <= MESSAGE_DURATION)
+                            CurrentMessage.Duration += 0.01f;
+                        else
+                        {
+                            GameState = ProgramState.Active;
+                            CurrentMessage.Duration = 0f;
+                        }
+                    break;
             }
 
             Invalidate();
@@ -1415,11 +1465,7 @@ namespace Circle
             Graphics g = e.Graphics;
 
             if (GameState == ProgramState.Intro)
-            #region Intro Part
-            {
                 Introduction(g);
-            }
-            #endregion
             else
             {
                 g.TranslateTransform(ViewOffset.X, ViewOffset.Y);
@@ -1469,6 +1515,7 @@ namespace Circle
                     g.DrawLine(new Pen(Color.FromArgb(100, 149, 237)), Pos[p], new PointF(Pos[p].X + 9 * theHero.Cos(angles[p]), Pos[p].Y + 9 * theHero.Sin(angles[p])));
                 #endregion
 
+                #region Balls, Lasers, Doors
                 for (int a = 0; a < Balls.Count; ++a)
                 {
                     PointF TP = Balls[a].Position;
@@ -1478,16 +1525,20 @@ namespace Circle
                     g.DrawEllipse(new Pen(Balls[a].Color, 2), TP.X - 7, TP.Y - 7, 24, 24);
                     g.FillEllipse(new SolidBrush(Balls[a].Color), TP.X, TP.Y, 10, 10);
                 }
+
                 foreach (Laser TL in Lasers)
                 {
                     g.DrawLine(new Pen(Color.FromArgb(24, 255, 255, 255), 3), TL.RayStart, TL.RayEnd);
                     g.DrawLine(Pens.Red, TL.RayStart, TL.RayEnd);
                 }
+
                 foreach (Door TD in Doors)
-                    if (TD.Type == DoorType.Blocking)
-                        g.DrawRectangle(Pens.Black, TD.Rectangle);
-                    else
+                {
+                    if (TD.Type != DoorType.Blocking)
                         g.FillRectangle(new HatchBrush(HatchStyle.Percent30, Color.Black, Color.CornflowerBlue), TD.Rectangle);
+                    g.DrawRectangle(new Pen(Color.FromArgb(190, 32, 32, 32)), TD.Rectangle);
+                }
+                #endregion
 
                 #region Boxes & Projectiles
                 foreach (Box TB in Boxes)
@@ -1586,6 +1637,14 @@ namespace Circle
                             g.DrawString("Exit", Verdana15, Brushes.Black, ExitRectangle.X + 17, ExitRectangle.Y + 1);
                             g.DrawImage(iGlassPanelCorners, OkRectangle);
                             g.DrawImage(iGlassPanelCorners, ExitRectangle);
+                        }
+                        else
+                        {
+                            g.DrawImage(iGlassPanelCorners, MessageRectangle);
+                            CurrentMessage.Change();
+                            g.DrawString(CurrentMessage.NewText, Verdana17, Brushes.Black, new Rectangle(MessageRectangle.X + 15, MessageRectangle.Y + 15, MessageRectangle.Width - 30, MessageRectangle.Height - 30), TextFormatCenter);
+                            g.DrawImage(iGlassPanelCorners, DoneRectangle);
+                            g.DrawString("Done", Verdana15, Brushes.Black, DoneRectangle.X + 12, DoneRectangle.Y + 1);
                         }
                         break;
                     case ProgramState.Settings:
