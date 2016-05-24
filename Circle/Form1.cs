@@ -26,6 +26,7 @@ namespace Circle
             BG_INTERVAL_MAX = 410,
             PROJECTILE_SIZE = 3,
             PROJECTILE_SPEED = 8,
+            REGION_COUNT = 10,
             TEMPORARY_REGION_MIN_SIZE = 4,
             TEMPORARY_REGION_MAX_SIZE = 100;
         const float
@@ -449,7 +450,7 @@ namespace Circle
                 if (theHero.ActualRectangle().Contains(next))
                     theHero.DoDamage();
                 foreach (Box TB in Boxes)
-                    if (reg.IsVisible(next) && !TB.Rectangle().Contains(next))
+                    if (reg.IsVisible(next) && !HERO_INITIAL_POSITION.Contains(next) && !TB.Rectangle().Contains(next))
                         goto Mark;
                 RayEnd = next;
             }
@@ -732,7 +733,7 @@ namespace Circle
             Console = new ConsolePrototype();
         PointF[] HeroLastPoints = new PointF[10];
         Point MouseAiming = new Point(960, 540);
-        Point ViewOffset = new Point(785, -85);
+        static Point ViewOffset = new Point(785, -85);
         int lastTick, lastFrameRate, frameRate,
             UnstuckIndex = 0, SelectedBall = -1, BallCount = 10, BGInterval = 365;
         static float BallSpeed = 1f, theHeroVelocity = 1.5f, HeroFallingDuration = 0f, IntroDuration = 0f,
@@ -752,9 +753,14 @@ namespace Circle
         static List<Box> Boxes = new List<Box>();
         static List<Projectile> Projectiles = new List<Projectile>();
         static List<TemporaryRegion> TempRegs = new List<TemporaryRegion>();
+        static List<Rectangle> MapRects = new List<Rectangle>();
+        static List<Region> MapRegs = new List<Region>(),
+                            RectsPath = new List<Region>();
         static Hero theHero;
         BackGroundColor BGColor;
         #endregion
+
+        static Point[] qweqwe = new Point[7];
 
         int CalculateFrameRate()
         {
@@ -811,6 +817,7 @@ namespace Circle
                 HeroLastPoints[a] = HERO_INITIAL_POSITION.Location;
             theHero = new Hero(HERO_INITIAL_POSITION.X + 25, HERO_INITIAL_POSITION.Y + 25, 0f);
             CirclePath.AddEllipse(CircleRectangle);
+            RegionRandom();
             RegionRefresh();
             Boxes.Add(new Box(new PointF(300, 600), BoxType.Wooden));
             Boxes.Add(new Box(new PointF(350, 750), BoxType.Steel));
@@ -821,6 +828,80 @@ namespace Circle
             Lasers.Add(new Laser(new Point(900, 450), new Point(900, 650), new Point(-1, 0), new Point(0, 1)));
             for (int a = 0; a < BallCount; ++a)
                 Balls.Add(new Ball(getRandomPointInRegion(reg), (float)(getRandom.Next(8, 18) / 10f), (float)getRandom.NextDouble() + getRandom.Next(359)));
+        }
+
+        static void RegionRandom()
+        {
+            if (MapRects.Count > 0 || MapRegs.Count > 0 || RectsPath.Count > 0)
+            {
+                MapRects.Clear();
+                MapRegs.Clear();
+                RectsPath.Clear();
+            }
+            for (int a = 0; a < REGION_COUNT; ++a)
+            {
+                int Left = getRandom.Next(-ViewOffset.X, Resolution.Width / 2),
+                    Top = getRandom.Next(-ViewOffset.Y, Resolution.Height / 2),
+                    Width = getRandom.Next(200, 300),
+                    Height = getRandom.Next(200, 300);
+                int randomdepth = 200;
+                Rectangle Rect = new Rectangle(Left, Top, Width, Height);
+            Mark:
+                for (int b = 0; b < MapRects.Count; ++b)
+                    if (randomdepth >= 0)
+                    if (MapRects[b].IntersectsWith(Rect))
+                    {
+                        Left = getRandom.Next(-ViewOffset.X, Resolution.Width / 2);
+                        Top = getRandom.Next(-ViewOffset.Y, Resolution.Height / 2);
+                        Rect = new Rectangle(Left, Top, Width, Height);
+                        randomdepth--;
+                        goto Mark;
+                    }
+                MapRects.Add(Rect);
+                MapRegs.Add(new Region(MapRects[a]));
+            }
+            for (int a = 0; a < REGION_COUNT; ++a)
+            {
+                int Rand1 = getRandom.Next(REGION_COUNT),
+                    Rand2 = getRandomExcept(0, REGION_COUNT, Rand1),
+                    X1 = MapRects[Rand1].Left + MapRects[Rand1].Width / 2,
+                    Y1 = MapRects[Rand1].Top + MapRects[Rand1].Height / 2,
+                    X2 = MapRects[Rand2].Left + MapRects[Rand2].Width / 2,
+                    Y2 = MapRects[Rand2].Top + MapRects[Rand2].Height / 2,
+                    Width = getRandom.Next(8, 19);
+                float Dir2 = theHero.AngleBetween(new PointF(X1, Y1), new PointF(X2, Y2)) - 90,
+                      Dir1 = theHero.AngleBetween(new PointF(X2, Y2), new PointF(X1, Y1)) - 90;
+                int
+                      NX1 = (int)(X1 + Width * theHero.Cos(Dir1)),
+                      NY1 = (int)(Y1 + Width * theHero.Sin(Dir1)),
+                      _NX1 = (int)(X1 + Width * theHero.Cos(Dir2)),
+                      _NY1 = (int)(Y1 + Width * theHero.Sin(Dir2)),
+                      NX2 = (int)(X2 + Width * theHero.Cos(Dir2)),
+                      NY2 = (int)(Y2 + Width * theHero.Sin(Dir2)),
+                      _NX2 = (int)(X2 + Width * theHero.Cos(Dir1)),
+                      _NY2 = (int)(Y2 + Width * theHero.Sin(Dir1));
+                GraphicsPath tgp = new GraphicsPath();
+                Point[] Way = new Point[]
+                {
+                    new Point(NX1, NY1),
+                    new Point(_NX1, _NY1),
+                    new Point(NX2, NY2),
+                    new Point(_NX2, _NY2)
+                };
+                //Point[] Way = new Point[]
+                //{
+                //    new Point(X1 - 16, Y1 + 16),
+                //    new Point(X1 - 16, Y1 - 16),
+                //    new Point(X2 - 16, Y1 - 16),
+                //    new Point(X2 - 16, Y2 - 16),
+                //    new Point(X2 + 16, Y2 - 16),
+                //    new Point(X2 + 16, Y1 + 16)
+                //};
+                qweqwe = Way;
+
+                tgp.AddPolygon(Way);
+                RectsPath.Add(new Region(tgp));
+            }
         }
 
         static void ResolutionResize()
@@ -839,21 +920,32 @@ namespace Circle
             OkRectangle.X = Resolution.Width / 2 - 120;
             OkRectangle.Y = ExitRectangle.Y = TryAgainRectangle.Y + 70;
             ExitRectangle.X = OkRectangle.X + 160;
+            MessageRectangle.X = Resolution.Width / 2 - 200;
+            MessageRectangle.Y = Resolution.Height / 2 - 100;
+            DoneRectangle.X = MessageRectangle.X + 160;
+            DoneRectangle.Y = MessageRectangle.Y + 140;
+            //MessageRectangle = new Rectangle(760, 440, 400, 200),
+            //DoneRectangle = new Rectangle(920, 580, 80, 30),
         }
 
         void RegionRefresh()
         {
-            reg = new Region(new Rectangle(1200, 400, 400, 400));
-            reg.Union(CirclePath);
-            reg.Xor(new Rectangle(1415, 750, 50, 50));
-            reg.Union(new Rectangle(300, 300, 300, 50));
-            reg.Union(new Rectangle(300, 300, 50, 300));
-            reg.Union(new Rectangle(150, 600, 200, 50));
-            reg.Union(new Rectangle(300, 600, 200, 300));
-            reg.Union(new Rectangle(1550, 350, 500, 50));
-            reg.Exclude(new Rectangle(300, 650, 150, 5));
-            reg.Exclude(new Rectangle(560, 350, 340, 4));
-            reg.Exclude(new Rectangle(900, 350, 2, 299));
+            reg = new Region(HERO_INITIAL_POSITION);
+            for (int s = 0; s < REGION_COUNT; ++s)
+                reg.Union(MapRegs[s]);
+            for (int s = 0; s < REGION_COUNT; ++s)
+                reg.Union(RectsPath[s]);
+            //reg = new Region(new Rectangle(1200, 400, 400, 400));
+            //reg.Union(CirclePath);
+            //reg.Xor(new Rectangle(1415, 750, 50, 50));
+            //reg.Union(new Rectangle(300, 300, 300, 50));
+            //reg.Union(new Rectangle(300, 300, 50, 300));
+            //reg.Union(new Rectangle(150, 600, 200, 50));
+            //reg.Union(new Rectangle(300, 600, 200, 300));
+            //reg.Union(new Rectangle(1550, 350, 500, 50));
+            //reg.Exclude(new Rectangle(300, 650, 150, 5));
+            //reg.Exclude(new Rectangle(560, 350, 340, 4));
+            //reg.Exclude(new Rectangle(900, 350, 2, 299));
             foreach (TemporaryRegion TTR in TempRegs)
                 reg.Union(TTR.Rectangle);
             foreach (Box TB in Boxes)
@@ -898,11 +990,32 @@ namespace Circle
         {
             Point TP;
         Mark:
-            TP = new Point(getRandom.Next(1920), getRandom.Next(1080));
+            TP = new Point(getRandom.Next(-ViewOffset.X , 1920), getRandom.Next(-ViewOffset.Y, 1080));
             foreach (Door TD in Doors)
                 if (_reg.IsVisible(TP) && !TD.Rectangle.Contains(TP) && !HERO_INITIAL_POSITION.Contains(TP))
                     return TP;
             goto Mark;
+        }
+
+        static int getRandomExcept(int Min, int Max, int Except)
+        {
+            int rand;
+        Mark:
+            rand = getRandom.Next(Min, Max);
+            if (rand == Except)
+                goto Mark;
+            return rand;
+        }
+
+        static int getRandomExcept(int Min, int Max, int[] Except)
+        {
+            int rand;
+        Mark:
+            rand = getRandom.Next(Min, Max);
+            foreach (int ex in Except)
+                if (rand == ex)
+                    goto Mark;
+            return rand;
         }
 
         void pKeyDown(object sender, KeyEventArgs e)
@@ -912,7 +1025,7 @@ namespace Circle
                 if (e.KeyData == Keys.Escape)
                     if (GameState != ProgramState.Settings && GameState != ProgramState.Dialog)
                         Application.Exit();
-                        //GameState = ProgramState.Intro;
+                    //GameState = ProgramState.Intro;
                     else
                         GameState = ProgramState.Active;
                 if (Console.Enabled)
@@ -959,6 +1072,9 @@ namespace Circle
                             GameState = ProgramState.Dialog;
                             CurrentDialog = DialogType.GameEnd;
                             break;
+                        case Keys.F3:
+                            RegionRandom();
+                            break;
                         case Keys.Enter:
                             if (GameState == ProgramState.Dialog)
                                 if (CurrentDialog == DialogType.GameEnd)
@@ -1003,6 +1119,9 @@ namespace Circle
                     }
                     #endregion
             }
+            else
+                if (!e.Shift && e.KeyData == Keys.Escape)
+                    IntroductionEnd();
         }
 
         void pKeyUp(object sender, KeyEventArgs e)
@@ -1187,10 +1306,7 @@ namespace Circle
             ViewOffset.Y = -((int)theHero.Position.Y - Resolution.Height / 2);
             if (IntroDuration >= INTRO_DURATION && !IntroOver)
             {
-                GameState = ProgramState.Dialog;
-                CurrentMessage = new Message("You are lost.\nAvoid the lasers and enemies.\nKeep searching a way out.");
-                CurrentDialog = DialogType.Information;
-                IntroOver = true;
+                IntroductionEnd();
             }
             else
                 IntroDuration += 0.01f;
@@ -1460,6 +1576,14 @@ namespace Circle
             Invalidate();
         }
 
+        static void IntroductionEnd()
+        {
+            GameState = ProgramState.Dialog;
+            CurrentMessage = new Message("You are lost.\nAvoid the lasers and enemies.\nKeep searching a way out.");
+            CurrentDialog = DialogType.Information;
+            IntroOver = true;
+        }
+
         void pDraw(object sender, PaintEventArgs e)
         {
             Graphics g = e.Graphics;
@@ -1609,7 +1733,9 @@ namespace Circle
                 {
                     string output = "Status: " + GameState.ToString() + "\nFPS: " + CalculateFrameRate().ToString();
                     output += "\nPosition: " + Math.Round(theHero.Position.X).ToString() + "; " + Math.Round(theHero.Position.Y).ToString();
-                    output += "\nR " + BGColor.R + "; G " + BGColor.G + "; B " + BGColor.B + "\n" + MouseAiming.ToString() + "\n" + Math.Round(HeroFallingDuration, 1).ToString();
+                    output += "\nR " + BGColor.R + "; G " + BGColor.G + "; B " + BGColor.B + "\n" + MouseAiming.ToString() + "\n" + Math.Round(HeroFallingDuration, 1).ToString() + "\n";
+                    foreach (Point PPP in qweqwe)
+                        output += (PPP.X - ViewOffset.X).ToString() + "; " + (PPP.Y - ViewOffset.Y).ToString() + "\n";
                     g.DrawString(output, new Font("QUARTZ MS", 14), Brushes.Black, 0, Console.Enabled ? 50 : 0);
                 }
                 #endregion
@@ -1678,6 +1804,10 @@ namespace Circle
                 }
                 #endregion
             }
+            //g.TranslateTransform(ViewOffset.X, ViewOffset.Y);
+            //g.DrawPolygon(Pens.Black, qweqwe);
+            //for (int mp = 0; mp < MapRects.Count; ++mp)
+            //    g.DrawString(mp.ToString(), Verdana15, Brushes.Black, MapRects[mp].Location);
         }
 
         void Introduction(Graphics g)
